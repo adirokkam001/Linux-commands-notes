@@ -1,329 +1,604 @@
-# Complete Linux Guide for Cloud Computing Beginners
+# 🐧 Linux for Cloud + DevOps — Beginner Guide
 
-> Beginner-friendly Linux notes for managing cloud servers, applications, logs, networking, permissions, and automation.
+> A practical, command-driven guide to the Linux skills every Cloud/DevOps engineer needs — from distributions to disk management.
 
-## 1. Why Linux for Cloud Computing?
+---
 
-Most AWS EC2, Azure VM, and Google Compute Engine servers run Linux. Knowing the command line helps you connect to servers, deploy applications, troubleshoot logs, and automate repeatable work.
+## 📖 Table of Contents
 
-## 2. Linux filesystem hierarchy
+1. [Linux Distributions: Ubuntu & Amazon Linux](#1-linux-distributions-ubuntu-and-amazon-linux)
+2. [Filesystem and Navigation](#2-filesystem-and-navigation)
+3. [File and Directory Commands](#3-file-and-directory-commands)
+4. [Text Commands](#4-text-commands)
+5. [Pipes and Redirection](#5-pipes-and-redirection)
+6. [Permissions: chmod, chown, Users & Groups](#6-permissions-chmod-chown-users-and-groups)
+7. [Processes: ps, top, kill](#7-processes-ps-top-kill)
+8. [Services and systemd](#8-services-and-systemd)
+9. [Package Managers: apt and yum/dnf](#9-package-managers-apt-and-yumdnf)
+10. [SSH](#10-ssh)
+11. [Environment Variables](#11-environment-variables)
+12. [Logs](#12-logs)
+13. [Cron Jobs](#13-cron-jobs)
+14. [Disk and Storage Commands](#14-disk-and-storage-commands)
 
-| Directory | Purpose |
-| --- | --- |
-| `/` | Root of the entire filesystem |
-| `/home` | Regular users' home folders |
-| `/etc` | System configuration files |
-| `/var` | Variable data such as logs and caches |
-| `/var/log` | System and application logs |
-| `/bin`, `/usr/bin` | Essential command programs |
-| `/sbin` | System administration programs |
-| `/tmp` | Temporary files |
-| `/opt` | Optional or third-party software |
-| `/root` | Root user's home folder |
-| `/dev` | Device files |
-| `/proc` | Virtual information about processes and the kernel |
+---
 
-## 3. Navigation
+## 1. Linux Distributions: Ubuntu and Amazon Linux
+
+A **Linux distribution** = Linux + a package manager + default tools + configuration choices.
+
+| Distribution   | Common Use                        | Package Manager |
+|----------------|-------------------------------------|------------------|
+| **Ubuntu**     | Learning, servers, development      | `apt`            |
+| **Amazon Linux** | AWS-focused, built for EC2        | `dnf` (sometimes `yum`) |
+
+**Identify your distribution:**
 
 ```bash
-pwd                    # Print current directory
-ls                     # List files
-ls -l                  # List with details
-ls -la                 # Include hidden files
-ls -lh                 # Human-readable file sizes
-cd /var/log            # Change to this directory
-cd ..                  # Move up one directory
-cd ~                   # Go to your home directory
-cd -                   # Return to the previous directory
-tree                   # Show a directory tree (may need installation)
+cat /etc/os-release
 ```
 
-Example:
+**Package command difference:**
 
 ```bash
-cd /home/ec2-user/projects
-ls -la
-```
-
-## 4. File and directory operations
-
-```bash
-touch file.txt                 # Create an empty file
-mkdir myfolder                 # Create a directory
-mkdir -p a/b/c                 # Create nested directories
-cp file.txt backup.txt         # Copy a file
-cp -r folder1 folder2          # Copy a directory and its contents
-mv file.txt newname.txt        # Rename a file
-mv file.txt /tmp/              # Move a file
-rm -i file.txt                 # Delete with confirmation
-rm -r folder                   # Delete a directory and its contents
-find / -name "*.log" 2>/dev/null  # Find log files
-locate filename                # Fast search (database may need updating)
-```
-
-> **Warning:** `rm -rf folder` deletes without confirmation. It usually cannot be undone.
-
-Example deployment folder:
-
-```bash
-mkdir -p /home/ec2-user/app
-cp -r ./mywebapp/. /home/ec2-user/app/
-```
-
-## 5. Viewing and editing files
-
-```bash
-cat file.txt                   # Print a small file
-less file.txt                  # Read page by page; press q to exit
-more file.txt                  # Older pager
-head -n 20 file.txt            # First 20 lines
-tail -n 20 file.txt            # Last 20 lines
-tail -f /var/log/syslog        # Follow new log lines live
-nano file.txt                  # Simple terminal editor
-vim file.txt                   # Advanced terminal editor
-```
-
-Example:
-
-```bash
-tail -f /var/log/nginx/error.log
-```
-
-Press `Control + C` to stop following a log.
-
-## 6. Permissions and ownership
-
-Linux permissions are read (`r`), write (`w`), and execute (`x`) for the owner, group, and others.
-
-```bash
-ls -l file.txt
-chmod 755 script.sh             # Owner: rwx; group/others: r-x
-chmod +x script.sh              # Add execute permission
-chmod -w file.txt               # Remove write permission
-sudo chown user:group file.txt  # Change owner and group
-sudo chown -R user:group folder # Change ownership recursively
-```
-
-| Number | Permission |
-| --- | --- |
-| `7` | `rwx` |
-| `6` | `rw-` |
-| `5` | `r-x` |
-| `4` | `r--` |
-| `0` | no permission |
-
-Example:
-
-```bash
-chmod +x deploy.sh
-./deploy.sh
-```
-
-## 7. User and group management
-
-```bash
-whoami                       # Current user
-id                           # User and group IDs
-groups                       # Current user's groups
-sudo useradd john            # Create a user
-sudo passwd john             # Set a password
-sudo usermod -aG sudo john   # Add a user to the sudo group
-sudo deluser john            # Delete a user (Debian/Ubuntu)
-su - john                    # Switch to user john
-sudo command                 # Run a command as administrator
-```
-
-## 8. Process management
-
-```bash
-ps                           # Current shell processes
-ps aux                       # All running processes
-top                          # Live CPU and memory view; press q to quit
-htop                         # Friendlier interactive view (may need installation)
-kill 1234                    # Stop process with PID 1234
-kill -9 1234                 # Force-stop process; use carefully
-killall firefox              # Stop processes by name
-jobs                         # Background jobs in this shell
-bg                           # Continue a stopped job in background
-fg                           # Bring a job to foreground
-nohup command &              # Run a command in background after logout
-```
-
-Example: find what uses port 8080, then stop it.
-
-```bash
-sudo lsof -i :8080
-kill <PID>
-```
-
-## 9. Disk and system information
-
-```bash
-df -h                         # Disk space
-du -sh folder/                # Size of a folder
-free -h                       # Memory usage
-uname -a                      # Kernel and system information
-uptime                        # Running time and system load
-lscpu                         # CPU information
-history                       # Command history
-clear                         # Clear the terminal
-```
-
-## 10. Package management
-
-### Debian and Ubuntu (APT)
-
-```bash
+# Ubuntu
 sudo apt update
-sudo apt upgrade
 sudo apt install nginx
-sudo apt remove nginx
-```
 
-### RHEL, CentOS, and Amazon Linux (YUM/DNF)
-
-```bash
-sudo yum update
-sudo yum install httpd
+# Amazon Linux
 sudo dnf install nginx
 ```
 
-## 11. Networking and remote access
+---
+
+## 2. Filesystem and Navigation
+
+Linux uses **one directory tree** starting at `/`.
+
+| Path        | Purpose                     |
+|-------------|-------------------------------|
+| `/`         | Root of the filesystem        |
+| `/home`     | User home folders             |
+| `/etc`      | System configuration          |
+| `/var/log`  | Log files                     |
+| `/tmp`      | Temporary files                |
+| `/usr/bin`  | Many installed commands       |
+
+**Navigation commands:**
 
 ```bash
-ip a                             # Network interfaces and IP addresses
-ping google.com                  # Test connectivity; Control + C stops it
-curl https://example.com         # Request a URL
-wget https://example.com/file.zip # Download a file
-ss -tulpn                        # Listening ports (modern replacement for netstat)
-ssh user@remote_ip               # Connect over SSH
-scp file.txt user@remote:/path/  # Copy file to a remote server
+pwd                 # Show current directory
+ls                   # List files/directories
+ls -l                # Detailed list
+ls -la               # Include hidden files
+cd /var/log          # Move to an absolute path
+cd ..                # Move up one directory
+cd ~                 # Move to your home directory
+cd -                 # Return to previous directory
 ```
 
-Example AWS connection:
+**Example:**
 
 ```bash
-ssh -i mykey.pem ec2-user@<public-ip>
+cd /var/log
+pwd
+# /var/log
+
+ls -l
 ```
 
-## 12. Text processing and searching
+---
 
+## 3. File and Directory Commands
+
+### `mkdir` — create directories
 ```bash
-grep "error" logfile.txt             # Find matching lines
-grep -r "TODO" ./src/                # Search a directory recursively
-grep -i "error" logfile.txt          # Ignore letter case
-wc -l file.txt                       # Count lines
-sort file.txt                        # Sort lines
-uniq file.txt                        # Remove adjacent duplicate lines
-cut -d',' -f1 data.csv               # First CSV column
-awk '{print $1}' file.txt            # First field of each line
-sed 's/old/new/g' file.txt           # Print with replacement
+mkdir project
+mkdir -p project/src/config   # Create nested directories
 ```
 
-Example:
-
+### `touch` — create an empty file or update its timestamp
 ```bash
-grep -i "error" /var/log/app.log | tail -20
+touch notes.txt
 ```
 
-## 13. Compression and archives
-
+### `cp` — copy files/directories
 ```bash
-tar -cvf archive.tar folder/          # Create tar archive
-tar -xvf archive.tar                  # Extract tar archive
-tar -czvf archive.tar.gz folder/      # Create gzip-compressed tar
-tar -xzvf archive.tar.gz              # Extract gzip-compressed tar
-zip -r archive.zip folder/            # Create zip archive
-unzip archive.zip                     # Extract zip archive
+cp source.txt backup.txt
+cp source.txt /tmp/
+cp -r project project-backup   # Copy a directory recursively
 ```
 
-## 14. Environment variables and shell basics
-
+### `mv` — move or rename
 ```bash
-echo $HOME                       # Show home directory
-export MY_VAR="hello"           # Set a variable for this session
-env                              # List environment variables
-echo $PATH                       # Directories searched for commands
-which python3                    # Location of a command
-alias ll='ls -la'                # Create an alias for this session
+mv old-name.txt new-name.txt      # Rename
+mv report.txt /home/user/docs/    # Move
 ```
 
-To make aliases or variables persistent, add them to your shell's configuration file, such as `~/.bashrc` or `~/.zshrc`.
-
-## 15. Basic shell scripting
-
+### `rm` — remove files/directories
 ```bash
-#!/bin/bash
-
-echo "Starting deployment..."
-APP_DIR="/home/ec2-user/app"
-
-if [ -d "$APP_DIR" ]; then
-  echo "Directory exists, updating..."
-  cd "$APP_DIR"
-else
-  echo "Creating directory..."
-  mkdir -p "$APP_DIR"
-fi
-
-for file in *.log; do
-  echo "Found log: $file"
-done
-
-echo "Deployment complete!"
+rm unwanted.txt
+rm -r old-folder
+rm -i important.txt   # Ask before removal
 ```
 
-Save it as `deploy.sh`, then run:
+> ⚠️ **Be careful with recursive deletion:**
+> ```bash
+> rm -rf folder
+> ```
+> This **permanently** removes `folder` and its contents **without confirmation**.
 
+---
+
+## 4. Text Commands
+
+Assume a file named `app.log`.
+
+### `cat` — print an entire file
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+cat app.log
+```
+Good for small files.
+
+### `less` — read large files one page at a time
+```bash
+less app.log
 ```
 
-## 16. Redirection and pipes
+| Key     | Action          |
+|---------|------------------|
+| `Space` | Next page        |
+| `b`     | Previous page    |
+| `/word` | Search           |
+| `q`     | Quit             |
 
+### `head` and `tail`
 ```bash
-command > file.txt                 # Save output, replacing file contents
-command >> file.txt                # Append output
-command < file.txt                 # Use a file as command input
-command1 | command2                # Send output from command1 to command2
+head app.log         # First 10 lines
+head -n 20 app.log    # First 20 lines
+
+tail app.log          # Last 10 lines
+tail -n 50 app.log     # Last 50 lines
+tail -f app.log        # Keep watching new log entries
 ```
 
-Example:
-
+### `grep` — search text
 ```bash
-grep "error" app.log | wc -l > error_count.txt
+grep "ERROR" app.log
+grep -i "error" app.log          # Case-insensitive
+grep -n "ERROR" app.log          # Show line numbers
+grep -r "database" /etc          # Search recursively
+grep -v "DEBUG" app.log          # Show lines NOT matching DEBUG
 ```
 
-## 17. Common cloud and DevOps command combinations
+### `find` — locate files
+```bash
+find /var/log -name "*.log"
+find . -type f -name "*.txt"
+find . -type d -name "config"
+find /tmp -mtime +7              # Modified more than 7 days ago
+```
+
+### `sort`, `uniq`, and `wc`
+```bash
+sort names.txt
+sort names.txt | uniq            # Remove adjacent duplicate lines
+sort names.txt | uniq -c         # Count each unique line
+
+wc report.txt                    # Lines, words, bytes
+wc -l report.txt                 # Only lines
+```
+
+**Example — find the most frequent IP addresses in a log:**
+```bash
+awk '{print $1}' access.log | sort | uniq -c | sort -nr
+```
+
+---
+
+## 5. Pipes and Redirection
+
+A **pipe** (`|`) sends the output of one command into another command.
 
 ```bash
-# Show the ten largest top-level directories
-sudo du -sh /* 2>/dev/null | sort -rh | head -10
+grep "ERROR" app.log | wc -l
+# Counts error lines
+```
 
-# Follow a log and show only errors
-tail -f /var/log/app.log | grep -i error
+**Redirection** sends output to files.
 
-# Find a process, then stop it with its PID
+```bash
+ls -la > files.txt        # Overwrite files.txt
+ls -la >> files.txt       # Append to files.txt
+grep "ERROR" app.log 2> errors.txt  # Send error messages to errors.txt
+```
+
+**Common streams:**
+
+| Stream  | Name   | Number |
+|---------|--------|:------:|
+| stdin   | input  | 0      |
+| stdout  | normal output | 1 |
+| stderr  | error output | 2 |
+
+**Capture both normal output and errors:**
+```bash
+command > output.txt 2>&1
+```
+
+---
+
+## 6. Permissions: chmod, chown, Users and Groups
+
+Every file has:
+- an **owner**
+- a **group**
+- **permissions** for owner, group, and everyone else
+
+**View permissions:**
+```bash
+ls -l
+```
+
+**Example:**
+```
+-rwxr-xr-- 1 alice developers 1200 Aug 24 deploy.sh
+```
+
+| Who    | Permission | Meaning              |
+|--------|------------|------------------------|
+| Owner  | `rwx`      | read, write, execute   |
+| Group  | `r-x`      | read, execute          |
+| Others | `r--`      | read                    |
+
+### `chmod` — change permissions
+```bash
+chmod +x script.sh        # Make executable
+chmod 644 config.txt      # Owner read/write; others read
+chmod 755 deploy.sh       # Owner full access; others read/execute
+chmod 600 private.key     # Only owner can read/write
+```
+
+**Permission numbers:**
+
+| Value | Meaning |
+|:-----:|---------|
+| 4     | read    |
+| 2     | write   |
+| 1     | execute |
+| 7     | rwx     |
+| 6     | rw-     |
+| 5     | r-x     |
+
+### `chown` — change owner/group
+```bash
+sudo chown alice file.txt
+sudo chown alice:developers file.txt
+sudo chown -R www-data:www-data /var/www/site
+```
+
+### Users and groups
+```bash
+whoami                       # Current user
+id                            # User ID and group memberships
+groups                        # Your groups
+sudo useradd bob              # Create user
+sudo passwd bob                # Set password
+sudo usermod -aG sudo bob      # Ubuntu: add user to sudo group
+```
+
+On Amazon Linux, administrative users are often added to the `wheel` group instead:
+```bash
+sudo usermod -aG wheel bob
+```
+
+---
+
+## 7. Processes: ps, top, kill
+
+A **process** is a running program.
+
+### View processes
+```bash
+ps
+ps aux                   # Detailed list of all processes
 ps aux | grep nginx
-sudo kill <PID>
+```
 
-# Check open ports
-sudo ss -tulpn
+### Monitor live system activity
+```bash
+top
+```
+If installed, `htop` is a friendlier alternative:
+```bash
+htop
+```
 
-# Manage a systemd service
+### Stop a process
+
+Find its process ID (PID):
+```bash
+ps aux | grep myapp
+```
+
+Then stop it:
+```bash
+kill 1234        # Ask process to stop gracefully
+kill -9 1234      # Force stop; use only if needed
+```
+
+Find and stop by name:
+```bash
+pkill nginx
+```
+
+---
+
+## 8. Services and systemd
+
+Many Linux services are managed by **systemd**.
+
+**Check a service:**
+```bash
 sudo systemctl status nginx
+```
+
+**Start, stop, and restart:**
+```bash
 sudo systemctl start nginx
 sudo systemctl stop nginx
 sudo systemctl restart nginx
-sudo systemctl enable nginx
 ```
 
-## Safety reminders
+**Enable at system boot:**
+```bash
+sudo systemctl enable nginx
+sudo systemctl disable nginx
+```
 
-- Inspect a folder with `ls` before using `rm -r`.
-- Use `sudo` only when you understand why administrator access is required.
-- Use `tail -f` and `journalctl` to investigate application problems before changing settings.
-- Never share private SSH key files such as `.pem` files.
+**View all failed services:**
+```bash
+systemctl --failed
+```
 
+**Read its logs:**
+```bash
+sudo journalctl -u nginx
+sudo journalctl -u nginx -f
+```
 
+---
+
+## 9. Package Managers: apt and yum/dnf
+
+A **package manager** installs and updates software.
+
+### Ubuntu: `apt`
+```bash
+sudo apt update                 # Refresh package list
+sudo apt upgrade                # Upgrade installed software
+sudo apt install curl nginx
+sudo apt remove nginx
+sudo apt search docker
+```
+
+### Amazon Linux: `dnf`
+```bash
+sudo dnf check-update
+sudo dnf upgrade
+sudo dnf install curl nginx
+sudo dnf remove nginx
+sudo dnf search docker
+```
+
+Some older systems use `yum`; its commands are very similar:
+```bash
+sudo yum install nginx
+```
+
+---
+
+## 10. SSH
+
+SSH lets you securely connect to another server.
+
+```bash
+ssh username@server-ip
+```
+
+**Example:**
+```bash
+ssh ec2-user@54.123.45.67
+```
+
+**For an AWS EC2 private key:**
+```bash
+chmod 400 my-key.pem
+ssh -i my-key.pem ec2-user@54.123.45.67
+```
+
+**Common default usernames:**
+
+| Server Type       | Default User |
+|--------------------|--------------|
+| Ubuntu EC2          | `ubuntu`     |
+| Amazon Linux EC2    | `ec2-user`   |
+
+**Copy a file to a server:**
+```bash
+scp -i my-key.pem app.zip ec2-user@54.123.45.67:/home/ec2-user/
+```
+
+**Copy from a server:**
+```bash
+scp -i my-key.pem ec2-user@54.123.45.67:/home/ec2-user/app.log .
+```
+
+---
+
+## 11. Environment Variables
+
+Environment variables store values available to programs and shell sessions.
+
+```bash
+echo $HOME
+echo $PATH
+echo $USER
+```
+
+**Set one for the current terminal session:**
+```bash
+export APP_ENV=production
+echo $APP_ENV
+```
+
+**Use it:**
+```bash
+mkdir "$HOME/my-project"
+```
+
+**Make variables persist** by adding them to `~/.bashrc` or `~/.zshrc`:
+```bash
+export APP_ENV=development
+export PATH="$PATH:/opt/mytool/bin"
+```
+
+Then reload:
+```bash
+source ~/.bashrc
+```
+
+> ⚠️ Avoid putting passwords or API keys directly into shell history or shared scripts.
+
+---
+
+## 12. Logs
+
+Logs record system and application events.
+
+**Common locations:**
+
+| Path                       | Purpose                              |
+|------------------------------|----------------------------------------|
+| `/var/log/syslog`            | Ubuntu system log                     |
+| `/var/log/auth.log`          | Ubuntu authentication log             |
+| `/var/log/messages`          | Amazon Linux / RHEL-style system log  |
+| `/var/log/secure`            | Amazon Linux authentication log       |
+| `/var/log/nginx/`            | Nginx logs                             |
+
+**Useful commands:**
+```bash
+sudo tail -f /var/log/syslog
+sudo grep "Failed password" /var/log/auth.log
+sudo less /var/log/nginx/error.log
+```
+
+**For services managed by systemd:**
+```bash
+sudo journalctl -u ssh
+sudo journalctl -u nginx --since "1 hour ago"
+sudo journalctl -p err -b
+```
+The last command shows error-level messages from the current boot.
+
+---
+
+## 13. Cron Jobs
+
+Cron schedules commands to run automatically.
+
+**Edit your user's cron jobs:**
+```bash
+crontab -e
+```
+
+**List them:**
+```bash
+crontab -l
+```
+
+**Cron format:**
+```
+minute hour day-of-month month day-of-week command
+```
+
+**Examples:**
+```bash
+# Run every day at 2:30 AM
+30 2 * * * /home/user/backup.sh
+
+# Run every 5 minutes
+*/5 * * * * /home/user/check-health.sh
+
+# Run every Monday at 9 AM
+0 9 * * 1 /home/user/weekly-report.sh
+```
+
+**Write output and errors to a log:**
+```bash
+0 2 * * * /home/user/backup.sh >> /home/user/backup.log 2>&1
+```
+
+> 💡 Use **full paths** in cron commands — cron has a limited environment.
+
+---
+
+## 14. Disk and Storage Commands
+
+### Check free space
+```bash
+df -h
+```
+Output columns include filesystem, total size, used space, available space, and mount point.
+
+### See directory sizes
+```bash
+du -sh /var/log
+du -sh *
+```
+
+**Find largest items in a directory:**
+```bash
+du -sh /var/* 2>/dev/null | sort -h
+```
+
+### View disks and partitions
+```bash
+lsblk
+```
+
+**Show filesystem types and UUIDs:**
+```bash
+sudo blkid
+```
+
+### Check mounted filesystems
+```bash
+mount
+```
+
+### Mount a disk
+```bash
+sudo mkdir -p /mnt/data
+sudo mount /dev/xvdf1 /mnt/data
+```
+
+**To keep a disk mounted after reboot**, add it to `/etc/fstab` — preferably using its UUID:
+```bash
+sudo blkid /dev/xvdf1
+```
+
+**Example `/etc/fstab` entry:**
+```
+UUID=your-uuid-here /mnt/data ext4 defaults,nofail 0 2
+```
+
+**Test `/etc/fstab` safely after editing:**
+```bash
+sudo mount -a
+```
+If that produces no errors, the configuration is usually valid.
+
+---
+
+*📌 Notes compiled for personal study — Linux fundamentals for Cloud/DevOps.*
